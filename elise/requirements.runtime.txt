@@ -1,0 +1,6 @@
+fastapi==0.136.0
+uvicorn==0.45.0
+python-multipart==0.0.26
+python-osc==1.9.3
+openai==2.31.0
+websocket-client==1.9.0

@@ -1,0 +1,112 @@
+﻿# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+Uni-Sign-main/.venv/
+
+# Node / frontend dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Logs and runtime output
+*.log
+logs/
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# IDE / local machine state
+.idea/
+.vscode/
+.cursor/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Model checkpoints, weights, and experiment outputs
+*.pt
+*.pth
+*.ckpt
+*.bin
+*.safetensors
+*.onnx
+checkpoints/
+checkpoint*/
+ckpts/
+pretrained_models/
+outputs/
+out/
+runs/
+wandb/
+tensorboard/
+
+# Datasets and large generated assets
+data/
+datasets/
+Dataset/
+Datasets/
+PHOENIX*/
+CSL*/
+How2Sign*/
+WLASL*/
+MSASL*/
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.zip
+*.tar
+*.tar.gz
+*.rar
+*.7z
+
+# Unreal Engine generated files and packaged runtime output
+Binaries/
+Build/
+DerivedDataCache/
+Intermediate/
+Saved/
+.vs/
+elise/Windows/Engine/Saved/
+elise/Windows/myproject/Saved/
+elise/Windows/Manifest_*.txt
+
+# Pixel Streaming / server generated artifacts
+elise/SignallingWebServer/logs/
+elise/SignallingWebServer/node_modules/
+elise/SignallingWebServer/package-lock.json
+
+# Local reproduction clones and heavy external repos
+SEDS/
+SLRT/
+Sign-IDD/
+
+# Local env files
+.env
+.env.*
+!.env.example
+
+# Packaged Unreal/Pixel Streaming runtime binaries
+elise/Windows/
+elise/**/*.exe
+elise/**/*.dll
+elise/**/*.pak
+elise/**/*.ucas
+elise/**/*.utoc
+elise/**/platform_scripts/cmd/node/
+elise/**/platform_scripts/cmd/coturn/

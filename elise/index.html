@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Elise 手语数字人系统</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0e1a;
+            --surface: #111827;
+            --border: rgba(99, 179, 237, 0.15);
+            --accent: #38bdf8;
+            --accent2: #818cf8;
+            --green: #34d399;
+            --red: #f87171;
+            --yellow: #fbbf24;
+            --text: #e2e8f0;
+            --text-dim: #64748b;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(56,189,248,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(56,189,248,0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .header {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--accent);
+            box-shadow: 0 0 10px var(--accent), 0 0 20px var(--accent);
+        }
+
+        .header h1 {
+            font-size: 18px;
+            font-weight: 500;
+            letter-spacing: 0.04em;
+        }
+
+        .header h1 span {
+            color: var(--accent);
+            font-weight: 700;
+        }
+
+        .header-right {
+            font-family: 'Space Mono', monospace;
+            font-size: 11px;
+            color: var(--text-dim);
+            letter-spacing: 0.1em;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 0.95fr 1.25fr;
+            gap: 16px;
+            min-height: 720px;
+        }
+
+        .panel {
+            background: rgba(17, 24, 39, 0.92);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .panel-title {
+            font-family: 'Space Mono', monospace;
+            font-size: 12px;
+            letter-spacing: 0.1em;
+            color: var(--accent);
+            text-transform: uppercase;
+        }
+
+        .camera-box {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background: #000;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        #camera-preview {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            transform: scaleX(-1);
+            background: #000;
+        }
+
+        .status-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-family: 'Space Mono', monospace;
+            border: 1px solid var(--border);
+            background: rgba(0,0,0,0.65);
+            color: var(--green);
+        }
+
+        .caption-bar {
+            width: 100%;
+            min-height: 70px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .caption-label {
+            font-family: 'Space Mono', monospace;
+            font-size: 10px;
+            color: var(--accent);
+            letter-spacing: 0.12em;
+            white-space: nowrap;
+        }
+
+        .caption-text {
+            font-size: 18px;
+            line-height: 1.35;
+            color: var(--text);
+        }
+
+        .caption-text.empty {
+            font-size: 14px;
+            color: var(--text-dim);
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            border: 1px solid transparent;
+            border-radius: 10px;
+            padding: 12px 16px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        #toggleSignBtn {
+            flex: 1;
+            background: linear-gradient(135deg, #1e3a8a, #1d4ed8);
+            border-color: rgba(129,140,248,0.45);
+        }
+
+        #toggleSignBtn.recording {
+            background: linear-gradient(135deg, #7f1d1d, #991b1b);
+            border-color: rgba(248, 113, 113, 0.4);
+        }
+
+        #recordBtn {
+            flex: 1;
+            background: linear-gradient(135deg, #065f46, #047857);
+            border-color: rgba(52, 211, 153, 0.35);
+        }
+
+        #recordBtn.recording {
+            background: linear-gradient(135deg, #7f1d1d, #991b1b);
+            border-color: rgba(248, 113, 113, 0.4);
+        }
+
+        .screen-wrapper {
+            width: 100%;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            background: #000;
+            position: relative;
+        }
+
+        #ue5-screen {
+            width: 100%;
+            height: 430px;
+            border: none;
+            display: block;
+        }
+
+        .stream-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-family: 'Space Mono', monospace;
+            border: 1px solid var(--border);
+            background: rgba(0,0,0,0.65);
+            color: var(--green);
+        }
+
+        .waveform {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .waveform.active { opacity: 1; }
+
+        .waveform span {
+            width: 3px;
+            border-radius: 2px;
+            background: var(--accent);
+            animation: wave 0.8s ease-in-out infinite;
+        }
+
+        .waveform span:nth-child(1) { height: 8px; animation-delay: 0s; }
+        .waveform span:nth-child(2) { height: 14px; animation-delay: 0.1s; }
+        .waveform span:nth-child(3) { height: 20px; animation-delay: 0.2s; }
+        .waveform span:nth-child(4) { height: 14px; animation-delay: 0.3s; }
+        .waveform span:nth-child(5) { height: 8px; animation-delay: 0.4s; }
+
+        @keyframes wave {
+            0%, 100% { transform: scaleY(1); }
+            50% { transform: scaleY(0.45); }
+        }
+
+        .log-wrapper {
+            width: 100%;
+        }
+
+        #log {
+            padding: 12px 14px;
+            min-height: 120px;
+            max-height: 180px;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--surface);
+            font-family: 'Space Mono', monospace;
+            font-size: 12px;
+            line-height: 1.7;
+        }
+
+        .log-time { color: var(--text-dim); }
+        .success { color: var(--green); }
+        .error { color: var(--red); }
+        .info { color: #93c5fd; }
+        .warn { color: var(--yellow); }
+
+        @media (max-width: 1100px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+            #ue5-screen {
+                height: 360px;
+            }
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/RecordRTC/5.6.2/RecordRTC.min.js"></script>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="header-left">
+            <div class="logo-dot"></div>
+            <h1><span>ELISE</span> · 手语数字人系统</h1>
+        </div>
+        <div class="header-right" id="clock">--:--:--</div>
+    </div>
+
+    <div class="main-grid">
+        <section class="panel">
+            <div class="panel-title">手语识别（摄像头）</div>
+            <div class="camera-box">
+                <video id="camera-preview" autoplay playsinline muted></video>
+                <div class="status-badge" id="signStatusBadge">CAM READY</div>
+            </div>
+
+            <div class="caption-bar">
+                <div class="caption-label">手语结果</div>
+                <div id="sign-caption" class="caption-text empty">等待手语录制...</div>
+            </div>
+
+            <div class="controls">
+                <button id="toggleSignBtn">🖐 开始手语录制</button>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="panel-title">语音识别 + 数字人</div>
+            <div class="screen-wrapper">
+                <iframe id="ue5-screen" src="http://127.0.0.1:8080/SignallingWebServer/www/player.html" frameborder="0" scrolling="no"></iframe>
+                <div class="stream-badge">LIVE</div>
+            </div>
+
+            <div class="caption-bar">
+                <div class="caption-label">语音结果</div>
+                <div id="caption-text" class="caption-text empty">等待语音输入...</div>
+                <div class="waveform" id="waveform">
+                    <span></span><span></span><span></span><span></span><span></span>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button type="button" id="recordBtn">🎙 点击开始说话</button>
+            </div>
+        </section>
+    </div>
+
+    <div class="log-wrapper">
+        <div id="log">等待操作...</div>
+    </div>
+</div>
+
+<script>
+    function updateClock() {
+        document.getElementById("clock").textContent = new Date().toLocaleTimeString("zh-CN", { hour12: false });
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    const logDiv = document.getElementById("log");
+    const captionText = document.getElementById("caption-text");
+    const signCaption = document.getElementById("sign-caption");
+    const waveform = document.getElementById("waveform");
+    const recordBtn = document.getElementById("recordBtn");
+    const toggleSignBtn = document.getElementById("toggleSignBtn");
+    const signStatusBadge = document.getElementById("signStatusBadge");
+    const cameraPreview = document.getElementById("camera-preview");
+
+    let audioRecorder;
+    let isVoiceRecording = false;
+    let cameraStream;
+    let mediaRecorder;
+    let recordedChunks = [];
+    let isSignRecording = false;
+    let signBackendWarmedUp = false;
+
+    function log(msg, type = "info") {
+        const time = new Date().toLocaleTimeString();
+        logDiv.innerHTML = `<span class="log-time">[${time}]</span> <span class="${type}">${msg}</span><br>` + logDiv.innerHTML;
+    }
+
+    function setText(target, text, empty = false) {
+        target.textContent = text;
+        target.className = empty ? "caption-text empty" : "caption-text";
+    }
+
+    async function warmupSignBackend() {
+        if (signBackendWarmedUp) return;
+        try {
+            const res = await fetch("http://127.0.0.1:8000/warmup_unisign", { method: "GET" });
+            if (!res.ok) throw new Error(String(res.status));
+            signBackendWarmedUp = true;
+            log("手语识别模型预热完成", "info");
+        } catch (error) {
+            // 预热失败不打断正常流程，用户点击识别时仍会再次请求。
+            log("手语识别模型预热失败，将在首次识别时自动重试", "warn");
+        }
+    }
+
+    async function initMicrophone() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            audioRecorder = RecordRTC(stream, {
+                type: "audio",
+                mimeType: "audio/wav",
+                recorderType: RecordRTC.StereoAudioRecorder,
+                desiredSampRate: 16000,
+                numberOfAudioChannels: 1
+            });
+            log("麦克风已就绪", "success");
+        } catch (error) {
+            log("麦克风权限被拒绝", "error");
+        }
+    }
+
+    async function initCamera() {
+        try {
+            cameraStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+            cameraPreview.srcObject = cameraStream;
+            signStatusBadge.textContent = "CAM READY";
+            log("摄像头已就绪", "success");
+            warmupSignBackend();
+        } catch (error) {
+            signStatusBadge.textContent = "CAM ERROR";
+            setText(signCaption, "摄像头权限失败", true);
+            log("摄像头权限被拒绝", "error");
+        }
+    }
+
+    function startSignRecording() {
+        if (!cameraStream) {
+            log("摄像头未就绪，无法录制手语", "error");
+            return;
+        }
+
+        recordedChunks = [];
+        mediaRecorder = new MediaRecorder(cameraStream, { mimeType: "video/webm" });
+        mediaRecorder.ondataavailable = (event) => {
+            if (event.data && event.data.size > 0) {
+                recordedChunks.push(event.data);
+            }
+        };
+        mediaRecorder.onstop = onSignRecordingStop;
+        mediaRecorder.start();
+
+        isSignRecording = true;
+        toggleSignBtn.classList.add("recording");
+        toggleSignBtn.textContent = "⏹ 停止手语录制";
+        signStatusBadge.textContent = "REC ON";
+        setText(signCaption, "正在录制手语动作...", true);
+        log("开始手语录制（再次点击停止并识别）", "info");
+    }
+
+    function stopSignRecording() {
+        if (mediaRecorder && mediaRecorder.state !== "inactive") {
+            mediaRecorder.stop();
+        }
+
+        isSignRecording = false;
+        toggleSignBtn.classList.remove("recording");
+        toggleSignBtn.textContent = "🖐 开始手语录制";
+        signStatusBadge.textContent = "CAM READY";
+    }
+
+    function onSignRecordingStop() {
+        if (!recordedChunks.length) {
+            setText(signCaption, "录制为空，请重试", true);
+            log("手语录制为空", "warn");
+            return;
+        }
+
+        setText(signCaption, "正在识别手语...", true);
+        const videoBlob = new Blob(recordedChunks, { type: "video/webm" });
+        uploadSignVideo(videoBlob);
+    }
+
+    function uploadSignVideo(blob) {
+        log("发送手语视频到后端识别...", "info");
+        const formData = new FormData();
+        formData.append("file", blob, "sign.webm");
+
+        fetch("http://127.0.0.1:8000/sign_to_text", { method: "POST", body: formData })
+            .then(async (res) => {
+                const bodyText = await res.text();
+                let data = {};
+                try {
+                    data = bodyText ? JSON.parse(bodyText) : {};
+                } catch (error) {
+                    throw new Error(`后端返回了非 JSON 响应（HTTP ${res.status}）`);
+                }
+                if (!res.ok) {
+                    throw new Error(data.detail || data.message || `后端错误（HTTP ${res.status}）`);
+                }
+                return data;
+            })
+            .then((data) => {
+                const text = data.text || data.transcript || data.recognized || data.intent_matched;
+                if (text) {
+                    setText(signCaption, text, false);
+                } else {
+                    setText(signCaption, "未识别到有效手势", true);
+                }
+
+                if (data.status === "success") {
+                    log("手语识别成功", "success");
+                } else {
+                    log(`手语识别失败: ${data.message || "未知错误"}`, "error");
+                }
+            })
+            .catch((error) => {
+                const msg = error?.message || "";
+                if (msg.includes("Failed to fetch")) {
+                    setText(signCaption, "手语接口未连通（/sign_to_text）", true);
+                    log("手语接口连接失败（/sign_to_text）", "error");
+                } else {
+                    setText(signCaption, "手语识别服务暂不可用，请稍后重试", true);
+                    log(`手语识别失败: ${msg}`, "error");
+                }
+            });
+    }
+
+    recordBtn.onclick = () => {
+        if (!audioRecorder || recordBtn.disabled) return;
+        if (!isVoiceRecording) {
+            audioRecorder.reset();
+            audioRecorder.startRecording();
+            isVoiceRecording = true;
+            recordBtn.textContent = "⏹ 点击结束并识别";
+            recordBtn.classList.add("recording");
+            waveform.classList.add("active");
+            setText(captionText, "正在聆听，说完后请再点一次按钮", true);
+            return;
+        }
+        recordBtn.disabled = true;
+        audioRecorder.stopRecording(() => {
+            isVoiceRecording = false;
+            recordBtn.textContent = "🎙 点击开始说话";
+            recordBtn.classList.remove("recording");
+            waveform.classList.remove("active");
+            setText(captionText, "正在识别...", true);
+            uploadAudio(audioRecorder.getBlob());
+        });
+    };
+
+    toggleSignBtn.onclick = () => {
+        if (isSignRecording) {
+            stopSignRecording();
+        } else {
+            startSignRecording();
+        }
+    };
+
+    function uploadAudio(blob) {
+        const reenable = () => {
+            recordBtn.disabled = false;
+        };
+        if (!blob || blob.size < 256) {
+            log("录音过短或为空，已忽略本次请求", "warn");
+            setText(captionText, "请点击开始说话，说完后再点一次结束", true);
+            reenable();
+            return;
+        }
+        log("发送语音到后端识别...", "info");
+        const formData = new FormData();
+        formData.append("file", blob, "record.wav");
+
+        fetch("http://127.0.0.1:8000/voice_to_sign", { method: "POST", body: formData })
+            .then((res) => res.json())
+            .then((data) => {
+                const text = data.text || data.transcript || data.recognized || data.text_recognized;
+                if (text) {
+                    setText(captionText, text, false);
+                }
+
+                if (data.status === "success") {
+                    log(`语音匹配成功，指令: [${data.osc_sent}]`, "success");
+                } else if (data.status === "unmatched") {
+                    log("语音未匹配动作", "warn");
+                    if (!text) {
+                        setText(captionText, "未识别到匹配动作", true);
+                    }
+                } else {
+                    log(`语音识别错误: ${data.message || "未知错误"}`, "error");
+                    setText(captionText, "识别出错", true);
+                }
+            })
+            .catch(() => {
+                log("语音接口连接失败", "error");
+                setText(captionText, "连接失败", true);
+            })
+            .finally(reenable);
+    }
+
+    initMicrophone();
+    initCamera();
+</script>
+</body>
+</html>
