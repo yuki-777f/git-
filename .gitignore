@@ -32,7 +32,9 @@ Thumbs.db
 # IDE / local machine state
 .idea/
 .vscode/
-.cursor/
+.cursor/*
+!.cursor/rules/
+!.cursor/rules/*.mdc
 *.suo
 *.user
 *.userosscache
@@ -110,3 +112,4 @@ elise/**/*.ucas
 elise/**/*.utoc
 elise/**/platform_scripts/cmd/node/
 elise/**/platform_scripts/cmd/coturn/
+
