@@ -2,6 +2,8 @@
 
 This directory keeps the three model environments independent, matching the PDF requirement that each model can be configured and validated separately.
 
+See `environment_status.md` for the latest verified Windows setup status.
+
 ## Directory Layout
 
 Clone the official repositories as siblings under the workspace root:
@@ -16,34 +18,35 @@ Sign_language_AI/
     environments/
 ```
 
-## Quick Setup Scripts
+## Proxy Used During Setup
 
-Run these from the workspace root in PowerShell. They create or build the environment and then run `python -m compileall .` inside the cloned official repository.
+GitHub and Docker access used the local Clash/Mihomo proxy shown below:
 
 ```powershell
-./member4_reproduction/environments/setup_seds.ps1
-./member4_reproduction/environments/setup_spoken2sign.ps1 -DataPath C:/path/to/data -PretrainedPath C:/path/to/pretrained_models
-./member4_reproduction/environments/setup_sign_idd.ps1
+$env:HTTP_PROXY="http://127.0.0.1:7897"
+$env:HTTPS_PROXY="http://127.0.0.1:7897"
+$env:ALL_PROXY="socks5://127.0.0.1:7897"
 ```
-
-The scripts clone the official repository only when the target folder is missing. They do not download datasets, model weights, SMPL assets, or private resources.
 
 ## 1. SEDS
 
 Official repository: https://github.com/longtaojiang/SEDS
 
 Independent environment file: `seds_environment.yml`
+Windows-compatible pip file: `seds_requirements_no_xformers.txt`
 
 ```powershell
 conda env create -f member4_reproduction/environments/seds_environment.yml
 conda activate seds-reproduction
 git clone https://github.com/longtaojiang/SEDS.git
-Set-Location SEDS
-pip install -r requirements.txt
-python -m compileall .
+pip install -r member4_reproduction/environments/seds_requirements_no_xformers.txt
+pip install numpy==1.25.1 Pillow==9.5.0 fsspec==2024.12.0 MarkupSafe==2.1.5
+python -m compileall SEDS
 ```
 
-Validation priority:
+`xformers==0.0.22.post7` is intentionally excluded on Windows because it requires `torch==2.1.0`, while the official SEDS README specifies `torch==2.3.1+cu121` and `torchvision==0.18.1+cu121`.
+
+Validation priority after datasets and checkpoints are ready:
 
 ```powershell
 bash scripts/eval_csl.sh
@@ -63,27 +66,23 @@ Expected resources:
 Official repository: https://github.com/FangyunWei/SLRT/tree/main/Spoken2Sign
 
 Independent environment file: `spoken2sign.Dockerfile`
-
-Docker is the preferred independent environment because the model depends on Blender, SMPL-X resources, and rendering tools.
+Base Docker image: `rzuo/pose:sing_ISLR_smplx`
 
 ```powershell
 git clone https://github.com/FangyunWei/SLRT.git
 docker pull rzuo/pose:sing_ISLR_smplx
 docker build -f member4_reproduction/environments/spoken2sign.Dockerfile -t spoken2sign-reproduction:latest .
+docker run --rm -v "${PWD}/SLRT:/workspace/SLRT" spoken2sign-reproduction:latest bash -lc "cd /workspace/SLRT/Spoken2Sign && find . -name '._*' -delete && python -m compileall ."
+```
+
+To run an interactive container after data/model resources are ready:
+
+```powershell
 docker run --gpus all `
   -v C:/path/to/data:/data `
   -v ${PWD}/SLRT:/workspace/SLRT `
   -v C:/path/to/pretrained_models:/pretrained_models `
   --name spoken2sign_smplx --ipc=host -it spoken2sign-reproduction:latest /bin/bash
-```
-
-Inside the container:
-
-```bash
-cd /workspace/SLRT/Spoken2Sign
-python -m compileall .
-# Then run the official minimal generation and rendering commands after 3D dictionary,
-# video IDs, SMPL/SMPLH/SMPL-X/MANO, and add-ons are placed correctly.
 ```
 
 Required external resources:
@@ -98,17 +97,20 @@ Required external resources:
 Official repository: https://github.com/NaVi-start/Sign-IDD
 
 Independent environment file: `sign_idd_environment.yml`
+Windows-compatible pip file: `sign_idd_requirements_pip_windows.txt`
 
 ```powershell
 conda env create -f member4_reproduction/environments/sign_idd_environment.yml
 conda activate sign-idd-reproduction
 git clone https://github.com/NaVi-start/Sign-IDD.git
-Set-Location Sign-IDD
-if (Test-Path requirements.txt) { pip install -r requirements.txt } elseif (Test-Path requirement.txt) { pip install -r requirement.txt } else { Write-Error "No requirement file found" }
-python -m compileall .
+pip install torch==2.4.1 torchvision==0.19.1 --index-url https://download.pytorch.org/whl/cu121
+pip install -r member4_reproduction/environments/sign_idd_requirements_pip_windows.txt
+python -m compileall Sign-IDD
 ```
 
-Validation priority:
+`Sign-IDD/requirement.txt` mixes pip packages with Conda/system packages. The Windows-compatible file excludes `bzip2`, `ca-certificates`, `certifi`, `python`, `torch`, and `torchvision`, then installs the PyTorch pair separately.
+
+Validation priority after datasets and checkpoints are ready:
 
 ```powershell
 python __main__.py test ./Configs/Sign-IDD.yaml
